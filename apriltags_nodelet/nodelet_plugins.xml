@@ -1,0 +1,9 @@
+<library path="libapriltags_nodelet">
+  <class name="apriltags_nodelet/AprilNodelet"
+	 type="apriltags_nodelet::AprilNodelet"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+        Nodelet to detect apriltag fiducial markers
+    </description>
+  </class>
+</library>

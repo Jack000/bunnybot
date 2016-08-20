@@ -1,0 +1,9 @@
+<library path="libdepth_object_detector">
+  <class name="depth_object_detector/DetectorNodelet"
+	 type="depth_object_detector::DetectorNodelet"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet for detecting objects in depth images
+    </description>
+  </class>
+</library>
