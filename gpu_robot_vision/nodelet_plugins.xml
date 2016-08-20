@@ -1,0 +1,9 @@
+<library path="libgpu_robot_vision">
+  <class name="gpu_robot_vision/VisionNodelet"
+	 type="gpu_robot_vision::VisionNodelet"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to rectify an unrectified camera image stream using gpu
+    </description>
+  </class>
+</library>

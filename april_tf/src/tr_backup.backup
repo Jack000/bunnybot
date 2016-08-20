@@ -1,0 +1,178 @@
+#include "ros/ros.h"
+#include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
+#include "geometry_msgs/PoseStamped.h"
+#include <apriltags_nodelet/AprilTagDetections.h>
+#include <map>
+#include <fstream>
+
+ros::Subscriber sub;
+
+tf::TransformListener* tf_listener = NULL;
+tf::TransformBroadcaster* tf_broadcaster = NULL;
+
+std::string map_frame = "map";
+std::string persistence_file = "/home/ubuntu/april_tf.txt";
+
+// store an exponential average of observed transforms in a map
+std::map<int,tf::Transform> avg;
+float pos_ratio = 0.1;
+float rot_ratio = 0.02;
+bool publish_target = true;
+float target_distance = 1.0;
+
+void detection_cb(const apriltags_nodelet::AprilTagDetectionsConstPtr& d){
+
+  if(d->detections.size() == 0){
+    return;
+  }
+
+  apriltags_nodelet::AprilTagDetection tag;
+  geometry_msgs::PoseStamped camera_pose;
+  geometry_msgs::PoseStamped p;
+
+  std::vector<tf::Transform> tfs;
+  std::vector<int> ids;
+
+  for(int i=0; i < d->detections.size(); i++){
+    tag = d->detections[i];
+
+    if(tag.tag_size < 1 && tag.tag_size > 0.01){
+      try{
+        camera_pose.header = tag.header;
+        camera_pose.pose = tag.pose;
+        // use classic tf instead of tf2. there doesn't appear to be a transformpose() in tf2
+        tf_listener->transformPose(map_frame, camera_pose, p);
+      }
+      catch (tf::TransformException &ex) {
+        ROS_ERROR("%s",ex.what());
+        return;
+      }
+
+      tf::Transform t;
+      t.setOrigin(tf::Vector3(p.pose.position.x, p.pose.position.y, p.pose.position.z));
+
+      tf::Quaternion q(p.pose.orientation.x, p.pose.orientation.y, p.pose.orientation.z, p.pose.orientation.w);
+      t.setRotation(q);
+
+      tfs.push_back(t);
+      ids.push_back(tag.id);
+    }
+  }
+
+  // update averages
+  for(int i=0; i<tfs.size(); i++){
+    std::map<int,tf::Transform>::iterator it;
+    it = avg.find(ids[i]);
+    if(it == avg.end()){
+      avg[ids[i]] = tfs[i];
+    }
+    else{
+      tf::Transform a;
+      tf::Vector3 ppos = avg[ids[i]].getOrigin();
+      tf::Vector3 apos = tfs[i].getOrigin();
+      tf::Vector3 npos = ppos.lerp(apos, pos_ratio);
+      a.setOrigin(npos);
+
+      tf::Quaternion prot = avg[ids[i]].getRotation();
+      tf::Quaternion arot = tfs[i].getRotation();
+      tf::Quaternion nrot = prot.slerp(arot, rot_ratio);
+      a.setRotation(nrot);
+
+      avg[ids[i]] = a;
+    }
+
+    /*tf_broadcaster->sendTransform(tf::StampedTransform(avg[ids[i]], ros::Time::now(), map_frame, "april_"+boost::to_string(ids[i])));
+
+    if(publish_target){
+      tf::Vector3 normal(0,0,target_distance);
+      tf::Vector3 axis = avg[ids[i]].getRotation().getAxis();
+      tf::Vector3 ppos = avg[ids[i]].getOrigin();
+
+      float angle = avg[ids[i]].getRotation().getAngle();
+      normal = normal.rotate(axis, angle);
+
+      tf::Transform proj;
+      proj.setOrigin(tf::Vector3(ppos.x()+normal.x(), ppos.y()+normal.y(), ppos.z()+normal.z()));
+      tf_broadcaster->sendTransform(tf::StampedTransform(proj, ros::Time::now(), map_frame, "april_"+boost::to_string(ids[i])+"_target"));
+    }*/
+  }
+}
+
+/*
+namespace boost {
+  namespace serialization {
+
+    template<class Archive>
+    void serialize(Archive & ar, tf::Transform & t, const unsigned int version)
+    {
+
+      tf::Vector3 o = t.getOrigin();
+      tf::Quaternion r = t.getRotation();
+      tf::Vector3 ra = r.getAxis();
+      double w = r.getW();
+
+      ar & o.x();
+      ar & o.y();
+      ar & o.z();
+
+      ar & ra.x();
+      ar & ra.y();
+      ar & ra.z();
+      ar & w;
+    }
+
+  } // namespace serialization
+} // namespace boost
+*/
+
+int main(int argc, char **argv){
+  ros::init(argc, argv, "april_tf");
+  ros::NodeHandle n;
+  sub = n.subscribe("detections", 1, detection_cb);
+  tf_listener = new (tf::TransformListener);
+  tf_broadcaster = new (tf::TransformBroadcaster);
+
+  std::map<int,tf::Transform>::iterator it;
+
+  ros::Rate rate(5);
+  while (n.ok()){
+
+    // spin
+    ros::spinOnce();
+
+    // publish stored tfs
+    for(it = avg.begin(); it != avg.end(); it++){
+      tf_broadcaster->sendTransform(tf::StampedTransform(it->second, ros::Time::now(), map_frame, "april_"+boost::to_string(it->first)));
+
+      if(publish_target){
+        tf::Vector3 normal(0,0,target_distance);
+        tf::Vector3 axis = it->second.getRotation().getAxis();
+        tf::Vector3 ppos = it->second.getOrigin();
+
+        float angle = it->second.getRotation().getAngle();
+        normal = normal.rotate(axis, angle);
+
+        // we use tf tree instead of pose or posearray
+        // this allows us to put the identifier in the frame id instead of making a custom msg type that the subscriber will have to add as a dependency
+        tf::Transform proj;
+        proj.setOrigin(tf::Vector3(ppos.x()+normal.x(), ppos.y()+normal.y(), ppos.z()+normal.z()));
+        tf_broadcaster->sendTransform(tf::StampedTransform(proj, ros::Time::now(), map_frame, "april_"+boost::to_string(it->first)+"_target"));
+      }
+    }
+    rate.sleep();
+  }
+
+  // store state to persistence file on shutdown
+  std::ofstream ofs(persistence_file.c_str());
+
+  // save data to archive
+  {
+    boost::archive::text_oarchive oa(ofs);
+    // write class instance to archive
+    oa << avg;
+  }
+
+  return 0;
+}
