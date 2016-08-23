@@ -1,0 +1,5 @@
+robot
+resistor
+go home
+water
+trash

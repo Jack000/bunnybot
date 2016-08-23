@@ -1,0 +1,23 @@
+<launch>
+  <node pkg="gmapping" type="slam_gmapping" name="gmapping" output="screen" >
+      <remap from="scan" to="scan_filtered" />
+      <param name="map_update_interval" type="double" value="1" />
+      <param name="iterations" type="double" value="5" />
+      <param name="maxUrange" type="double" value="4.8" />
+      <param name="maxRange" value="4.9"/>
+      <param name="linearUpdate" type="double" value="0.15" />
+      <param name="angularUpdate" type="double" value="0.1" />
+      <param name="temporalUpdate" value="1.0"/>
+      <param name="delta" type="double" value="0.04" />
+      <param name="minimumScore" type="double" value="50.0" />
+      <param name="particles" type="int" value="20" />
+      <param name="srr" type="double" value="0.02" />
+      <param name="srt" type="double" value="0.04" />
+      <param name="str" type="double" value="0.02" />
+      <param name="stt" type="double" value="0.04" />
+      <param name="xmin" value="-5.0"/>
+        <param name="ymin" value="-5.0"/>
+        <param name="xmax" value="5.0"/>
+        <param name="ymax" value="5.0"/>
+  </node>
+</launch>

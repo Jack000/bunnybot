@@ -1,0 +1,19 @@
+<launch>
+<group ns="planner">
+      <remap from="map" to="/map" />
+      <remap from="move_base_simple/goal" to="/goal"/>
+      <!--<remap from="cmd_vel" to="/mobile_base/commands/velocity"/>-->
+
+      <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+         <remap from="cmd_vel" to="/raw_cmd_vel" />
+         <param name="controller_frequency" type="double" value="10" />
+         <param name="planner_frequency" type="double" value="0.5" />
+         <rosparam file="costmap_common_params.yaml" command="load" ns="global_costmap" />
+         <rosparam file="costmap_common_params.yaml" command="load" ns="local_costmap" />
+         <rosparam file="local_costmap_params.yaml" command="load" />
+         <rosparam file="global_costmap_params.yaml" command="load" />
+         <rosparam file="base_local_planner_params.yaml" command="load" />
+      </node>
+</group>
+</launch>
+

@@ -1,0 +1,48 @@
+Language model created by QuickLM on Wed Aug 17 00:41:05 EDT 2016
+Copyright (c) 1996-2010 Carnegie Mellon University and Alexander I. Rudnicky
+
+The model is in standard ARPA format, designed by Doug Paul while he was at MITRE.
+
+The code that was used to produce this language model is available in Open Source.
+Please visit http://www.speech.cs.cmu.edu/tools/ for more information
+
+The (fixed) discount mass is 0.5. The backoffs are computed using the ratio method.
+This model based on a corpus of 5 sentences and 8 words
+
+\data\
+ngram 1=8
+ngram 2=11
+ngram 3=6
+
+\1-grams:
+-0.8062 </s> -0.3010
+-0.8062 <s> -0.2272
+-1.5051 GO -0.2872
+-1.5051 HOME -0.2272
+-1.5051 RESISTOR -0.2272
+-1.5051 ROBOT -0.2272
+-1.5051 TRASH -0.2272
+-1.5051 WATER -0.2272
+
+\2-grams:
+-1.0000 <s> GO 0.0000
+-1.0000 <s> RESISTOR 0.0000
+-1.0000 <s> ROBOT 0.0000
+-1.0000 <s> TRASH 0.0000
+-1.0000 <s> WATER 0.0000
+-0.3010 GO HOME 0.0000
+-0.3010 HOME </s> -0.3010
+-0.3010 RESISTOR </s> -0.3010
+-0.3010 ROBOT </s> -0.3010
+-0.3010 TRASH </s> -0.3010
+-0.3010 WATER </s> -0.3010
+
+\3-grams:
+-0.3010 <s> GO HOME
+-0.3010 <s> RESISTOR </s>
+-0.3010 <s> ROBOT </s>
+-0.3010 <s> TRASH </s>
+-0.3010 <s> WATER </s>
+-0.3010 GO HOME </s>
+
+\end\

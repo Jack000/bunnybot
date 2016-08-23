@@ -1,0 +1,34 @@
+<launch>
+
+<node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager"/>
+
+<include file="kobuki.launch" />
+
+<!-- smooth vel commands for smoother robot -->
+
+<node pkg="nodelet" type="nodelet" name="smoother" args="load yocs_velocity_smoother/VelocitySmootherNodelet nodelet_manager">
+
+    <param name="accel_lim_v" value="0.1" />
+    <param name="accel_lim_w" value="3.2" />
+    <param name="speed_lim_v" value="1" />
+    <param name="speed_lim_w" value="3" />
+    <param name="robot_feedback" value="0" />
+    <param name="frequency" value="10" />
+
+    <remap from="smoother/raw_cmd_vel"    to="/raw_cmd_vel"/>
+    <remap from="smoother/smooth_cmd_vel" to="/mobile_base/commands/velocity"/>
+
+    <remap from="smoother/odometry"       to="/odom" />
+</node>
+
+<node pkg="kobuki_keyop" type="keyop" name="keyop" output="screen">
+    <remap from="keyop/motor_power" to="mobile_base/commands/motor_power"/>
+    <remap from="keyop/cmd_vel" to="raw_cmd_vel"/>
+    <param name="linear_vel_step"  value="0.05" type="double"/>
+    <param name="linear_vel_max"   value="1.5"  type="double"/>
+    <param name="angular_vel_step" value="0.33" type="double"/>
+    <param name="angular_vel_max"  value="6.6"  type="double"/>
+    <param name="wait_for_connection_" value="true" type="bool"/>
+</node>
+
+</launch>
